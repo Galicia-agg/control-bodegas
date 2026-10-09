@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\StorageUnitStatus;
 use App\Enums\StorageUnitType;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int|null $parent_id
  * @property StorageUnitType $type
  * @property StorageUnitStatus $status
+ * @property CarbonInterface|null $delivered_at
  */
 #[Fillable(['receipt_id', 'parent_id', 'type', 'code', 'description', 'pieces', 'weight_kg', 'volume_m3', 'location', 'status', 'delivered_at'])]
 class StorageUnit extends Model

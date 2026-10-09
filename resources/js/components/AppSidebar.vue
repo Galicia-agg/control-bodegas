@@ -4,6 +4,7 @@ import {
     Building2,
     LayoutDashboard,
     PackageCheck,
+    Receipt,
     ShieldCheck,
     UsersRound,
     Users,
@@ -24,6 +25,7 @@ import {
 import { usePermissions } from '@/composables/usePermissions';
 import { dashboard } from '@/routes';
 import { index as customersIndex } from '@/routes/customers';
+import { index as ratesIndex } from '@/routes/rates';
 import { index as receiptsIndex } from '@/routes/receipts';
 import { index as rolesIndex } from '@/routes/roles';
 import { index as usersIndex } from '@/routes/users';
@@ -56,6 +58,12 @@ const navigation: NavGroup[] = [
                 href: customersIndex(),
                 icon: UsersRound,
                 can: 'customers.view',
+            },
+            {
+                title: 'Tarifas',
+                href: ratesIndex(),
+                icon: Receipt,
+                can: 'rates.view',
             },
             {
                 title: 'Bodegas',

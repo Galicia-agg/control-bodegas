@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ReceiptStatus;
 use App\Enums\TransportMode;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -16,6 +17,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property TransportMode $transport_mode
  * @property ReceiptStatus $status
  * @property int $warehouse_id
+ * @property int $customer_id
+ * @property CarbonInterface $received_at
  */
 #[Fillable(['folio', 'customer_id', 'warehouse_id', 'user_id', 'transport_mode', 'transport_document', 'duca', 'carrier', 'origin', 'status', 'received_at', 'notes'])]
 class Receipt extends Model

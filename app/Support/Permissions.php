@@ -28,6 +28,10 @@ final class Permissions
                 'receipts.view' => 'Consultar ingresos y mercadería almacenada',
                 'receipts.create' => 'Registrar ingresos de mercadería',
             ]],
+            'rates' => ['label' => 'Tarifas', 'permissions' => [
+                'rates.view' => 'Ver tarifas y cobros acumulados',
+                'rates.manage' => 'Administrar tarifas',
+            ]],
             'security' => ['label' => 'Seguridad', 'permissions' => [
                 'users.manage' => 'Administrar usuarios',
                 'roles.manage' => 'Administrar roles y permisos',
@@ -57,10 +61,10 @@ final class Permissions
 
         return [
             'Supervisor' => [
-                ...$readOnly, 'warehouses.manage', 'warehouses.all', 'customers.manage', 'receipts.create',
+                ...$readOnly, 'warehouses.manage', 'warehouses.all', 'customers.manage', 'receipts.create', 'rates.view', 'rates.manage',
             ],
             'Bodeguero' => [...$readOnly, 'receipts.create'],
-            'Auditor' => [...$readOnly, 'warehouses.all'],
+            'Auditor' => [...$readOnly, 'warehouses.all', 'rates.view'],
         ];
     }
 }

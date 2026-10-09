@@ -102,3 +102,33 @@ export type PermissionGroups = Record<
     string,
     { label: string; permissions: Record<string, string> }
 >;
+
+export type RateService = 'almacenaje' | 'manejo' | 'domicilio';
+
+export type Rate = {
+    id: number;
+    service: RateService;
+    unit_type: StorageUnitType | null;
+    customer_id: number | null;
+    customer?: Option | null;
+    amount: string;
+    free_days: number;
+    is_active: boolean;
+};
+
+export type AccrualLine = {
+    unit_id: number;
+    code: string;
+    type: StorageUnitType;
+    days: number;
+    free_days: number;
+    billable_days: number;
+    rate: number | null;
+    amount: number;
+};
+
+export type Accrual = {
+    lines: AccrualLine[];
+    total: number;
+    missing_rates: number;
+};

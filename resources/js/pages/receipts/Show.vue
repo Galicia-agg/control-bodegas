@@ -5,15 +5,16 @@ import { computed } from 'vue';
 import ReceiptStatusBadge from '@/components/ReceiptStatusBadge.vue';
 import TransportModeBadge from '@/components/TransportModeBadge.vue';
 import { Button } from '@/components/ui/button';
-import { formatDateTime, formatNumber } from '@/lib/format';
+import { formatCurrency, formatDateTime, formatNumber } from '@/lib/format';
 import { index, show } from '@/routes/receipts';
-import type { Receipt, StorageUnit } from '@/types';
+import type { Accrual, Receipt, StorageUnit } from '@/types';
 
 const props = defineProps<{
     receipt: Receipt;
     modeLabel: string;
     documentLabel: string;
     statusLabel: string;
+    accrual: Accrual | null;
 }>();
 
 setLayoutProps({
@@ -272,5 +273,101 @@ const totals = computed(() => {
                 </p>
             </div>
         </article>
+
+        <section
+            v-if="accrual"
+            class="overflow-hidden rounded-xl border bg-card shadow-xs"
+        >
+            <div
+                class="flex flex-wrap items-start justify-between gap-3 border-b p-6"
+            >
+                <div>
+                    <h2 class="font-semibold">Almacenaje acumulado a hoy</h2>
+                    <p class="text-sm text-muted-foreground">
+                        Se cobra por unidad y día, desde la fecha de recepción
+                        (el primer día cuenta). Los contenedores o palets con
+                        contenido se cobran a través de lo que contienen.
+                    </p>
+                </div>
+                <p class="text-right">
+                    <span class="block text-xs text-muted-foreground"
+                        >Total</span
+                    >
+                    <span class="text-2xl font-bold tabular">{{
+                        formatCurrency(accrual.total)
+                    }}</span>
+                </p>
+            </div>
+            <p
+                v-if="accrual.missing_rates"
+                class="border-b bg-warning/15 px-6 py-3 text-sm"
+            >
+                {{ accrual.missing_rates }} unidad(es) no tienen tarifa de
+                almacenaje y no se están cobrando. Revisa la sección de Tarifas.
+            </p>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead
+                        class="bg-muted/50 text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+                    >
+                        <tr>
+                            <th scope="col" class="px-6 py-2.5 text-left">
+                                Unidad
+                            </th>
+                            <th scope="col" class="px-3 py-2.5 text-right">
+                                Días
+                            </th>
+                            <th scope="col" class="px-3 py-2.5 text-right">
+                                Libres
+                            </th>
+                            <th scope="col" class="px-3 py-2.5 text-right">
+                                Cobrables
+                            </th>
+                            <th scope="col" class="px-3 py-2.5 text-right">
+                                Tarifa/día
+                            </th>
+                            <th scope="col" class="px-6 py-2.5 text-right">
+                                Importe
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y">
+                        <tr v-for="line in accrual.lines" :key="line.unit_id">
+                            <td class="px-6 py-3">
+                                <p class="font-medium">
+                                    {{ typeLabels[line.type] }}
+                                </p>
+                                <p
+                                    class="font-mono text-xs text-muted-foreground"
+                                >
+                                    {{ line.code }}
+                                </p>
+                            </td>
+                            <td class="px-3 py-3 text-right tabular">
+                                {{ line.days }}
+                            </td>
+                            <td class="px-3 py-3 text-right tabular">
+                                {{ line.free_days }}
+                            </td>
+                            <td class="px-3 py-3 text-right tabular">
+                                {{ line.billable_days }}
+                            </td>
+                            <td class="px-3 py-3 text-right tabular">
+                                {{
+                                    line.rate === null
+                                        ? 'Sin tarifa'
+                                        : formatCurrency(line.rate)
+                                }}
+                            </td>
+                            <td
+                                class="px-6 py-3 text-right font-medium tabular"
+                            >
+                                {{ formatCurrency(line.amount) }}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
     </div>
 </template>

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\RateController;
 use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
@@ -31,6 +32,13 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('ingresos/nuevo', [ReceiptController::class, 'create'])->middleware('can:receipts.create')->name('receipts.create');
     Route::post('ingresos', [ReceiptController::class, 'store'])->middleware('can:receipts.create')->name('receipts.store');
     Route::get('ingresos/{receipt}', [ReceiptController::class, 'show'])->middleware('can:receipts.view')->name('receipts.show');
+
+    Route::get('tarifas', [RateController::class, 'index'])->middleware('can:rates.view')->name('rates.index');
+    Route::middleware('can:rates.manage')->group(function () {
+        Route::post('tarifas', [RateController::class, 'store'])->name('rates.store');
+        Route::put('tarifas/{rate}', [RateController::class, 'update'])->name('rates.update');
+        Route::delete('tarifas/{rate}', [RateController::class, 'destroy'])->name('rates.destroy');
+    });
 
     Route::middleware('can:users.manage')->group(function () {
         Route::get('usuarios', [UserController::class, 'index'])->name('users.index');

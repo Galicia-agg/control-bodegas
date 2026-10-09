@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Customer;
+use App\Models\Rate;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Services\ReceptionService;
@@ -31,6 +32,13 @@ class DemoSeeder extends Seeder
             ['Textiles del Pacífico, S.A.', '7654321-0', 'María López', 'logistica@textilespacifico.test', '2444-5566', 'Mixco, Guatemala'],
             ['Ferretería La Unión', '5554443-2', 'Jorge Ramírez', 'info@launion.test', '2555-6677', 'Quetzaltenango'],
         ])->map(fn ($c) => Customer::create(array_combine(['name', 'tax_id', 'contact_name', 'email', 'phone', 'address'], $c)));
+
+        foreach ([['contenedor', 50, 3], ['palet', 5, 5], ['caja', 1.5, 5], ['bulto', 2, 5]] as [$type, $amount, $free]) {
+            Rate::create(['service' => 'almacenaje', 'unit_type' => $type, 'amount' => $amount, 'free_days' => $free]);
+        }
+        Rate::create(['service' => 'almacenaje', 'unit_type' => 'palet', 'customer_id' => $customers[0]->id, 'amount' => 4, 'free_days' => 10]);
+        Rate::create(['service' => 'manejo', 'amount' => 10]);
+        Rate::create(['service' => 'domicilio', 'amount' => 150]);
 
         $reception->register([
             'customer_id' => $customers[0]->id,

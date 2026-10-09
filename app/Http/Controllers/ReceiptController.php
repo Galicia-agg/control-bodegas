@@ -9,6 +9,7 @@ use App\Http\Requests\ReceiptRequest;
 use App\Models\Customer;
 use App\Models\Receipt;
 use App\Models\Warehouse;
+use App\Services\BillingService;
 use App\Services\ReceptionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -78,7 +79,7 @@ class ReceiptController extends Controller
         return to_route('receipts.show', $receipt);
     }
 
-    public function show(Request $request, Receipt $receipt): Response
+    public function show(Request $request, Receipt $receipt, BillingService $billing): Response
     {
         abort_unless(Receipt::visibleTo($request->user())->whereKey($receipt->id)->exists(), 403);
 
@@ -94,6 +95,7 @@ class ReceiptController extends Controller
             'modeLabel' => $receipt->transport_mode->label(),
             'documentLabel' => $receipt->transport_mode->documentLabel(),
             'statusLabel' => $receipt->status->label(),
+            'accrual' => $request->user()->can('rates.view') ? $billing->storageAccrual($receipt) : null,
         ]);
     }
 }
