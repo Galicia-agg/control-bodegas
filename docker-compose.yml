@@ -1,0 +1,82 @@
+services:
+    control_bodegas_app:
+        build:
+            context: .
+            dockerfile: ./docker/php/Dockerfile
+        image: control-bodegas-app
+        container_name: control-bodegas-app
+        restart: unless-stopped
+        tty: true
+        working_dir: /var/www
+        volumes:
+            - ./:/var/www
+            - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+        depends_on:
+            control_bodegas_postgres:
+                condition: service_healthy
+            control_bodegas_redis:
+                condition: service_healthy
+        networks:
+            - control-bodegas-network
+
+    control_bodegas_server:
+        image: nginx:alpine
+        container_name: control-bodegas-server
+        restart: unless-stopped
+        ports:
+            - '${APP_PORT:-8075}:80'
+        volumes:
+            - ./:/var/www
+            - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+        depends_on:
+            - control_bodegas_app
+        networks:
+            - control-bodegas-network
+
+    control_bodegas_postgres:
+        image: postgres:18-alpine
+        container_name: control-bodegas-postgres
+        restart: unless-stopped
+        environment:
+            POSTGRES_DB: ${DB_DATABASE:-control_bodegas}
+            POSTGRES_USER: ${DB_USERNAME:-bodegas}
+            POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
+        volumes:
+            - control-bodegas-pgsql:/var/lib/postgresql
+        ports:
+            - '${FORWARD_DB_PORT:-54325}:5432'
+        networks:
+            - control-bodegas-network
+        healthcheck:
+            test:
+                [
+                    'CMD-SHELL',
+                    'pg_isready -U ${DB_USERNAME:-bodegas} -d ${DB_DATABASE:-control_bodegas}',
+                ]
+            interval: 5s
+            timeout: 5s
+            retries: 10
+
+    control_bodegas_redis:
+        image: redis:alpine
+        container_name: control-bodegas-redis
+        restart: unless-stopped
+        volumes:
+            - control-bodegas-redis:/data
+        networks:
+            - control-bodegas-network
+        healthcheck:
+            test: ['CMD', 'redis-cli', 'ping']
+            interval: 5s
+            timeout: 5s
+            retries: 10
+
+networks:
+    control-bodegas-network:
+        driver: bridge
+
+volumes:
+    control-bodegas-pgsql:
+        driver: local
+    control-bodegas-redis:
+        driver: local
