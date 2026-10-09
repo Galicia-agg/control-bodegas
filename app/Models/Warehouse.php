@@ -44,19 +44,11 @@ class Warehouse extends Model
     }
 
     /**
-     * @return HasMany<Stock, $this>
+     * @return HasMany<Receipt, $this>
      */
-    public function stocks(): HasMany
+    public function receipts(): HasMany
     {
-        return $this->hasMany(Stock::class);
-    }
-
-    /**
-     * @return HasMany<Movement, $this>
-     */
-    public function movements(): HasMany
-    {
-        return $this->hasMany(Movement::class);
+        return $this->hasMany(Receipt::class);
     }
 
     /**

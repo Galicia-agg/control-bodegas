@@ -2,144 +2,82 @@
 
 namespace Database\Seeders;
 
-use App\Enums\MovementType;
-use App\Models\Category;
-use App\Models\Product;
-use App\Models\Supplier;
+use App\Models\Customer;
 use App\Models\User;
 use App\Models\Warehouse;
-use App\Services\InventoryService;
+use App\Services\ReceptionService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 
 class DemoSeeder extends Seeder
 {
     /**
-     * Seed demo data: warehouses, catalog, users per role and movements.
+     * Seed demo data: warehouses, users per role, customers and receipts.
      */
-    public function run(InventoryService $inventory): void
+    public function run(ReceptionService $reception): void
     {
         $supervisor = User::factory()->create(['name' => 'Sofía Supervisor', 'email' => 'supervisor@bodegas.test'])->assignRole('Supervisor');
         $operator = User::factory()->create(['name' => 'Carlos Bodeguero', 'email' => 'bodeguero@bodegas.test'])->assignRole('Bodeguero');
         User::factory()->create(['name' => 'Ana Auditora', 'email' => 'auditor@bodegas.test'])->assignRole('Auditor');
 
-        $central = Warehouse::create(['code' => 'BOD-CEN', 'name' => 'Bodega Central', 'address' => 'Zona 12, Ciudad', 'phone' => '2200-1000', 'manager_id' => $supervisor->id]);
+        $central = Warehouse::create(['code' => 'BOD-CEN', 'name' => 'Bodega Central', 'address' => 'Zona 12, Ciudad de Guatemala', 'phone' => '2200-1000', 'manager_id' => $supervisor->id]);
         $norte = Warehouse::create(['code' => 'BOD-NOR', 'name' => 'Bodega Norte', 'address' => 'Km 8 Carretera al Atlántico', 'phone' => '2200-2000', 'manager_id' => $supervisor->id]);
-        $sur = Warehouse::create(['code' => 'BOD-SUR', 'name' => 'Bodega Sur', 'address' => 'Escuintla, Zona 1', 'phone' => '2200-3000']);
+        Warehouse::create(['code' => 'BOD-SUR', 'name' => 'Bodega Sur', 'address' => 'Escuintla, Zona 1', 'phone' => '2200-3000']);
 
         $operator->warehouses()->sync([$central->id, $norte->id]);
 
-        $catalog = [
-            'Ferretería' => [
-                ['FER-001', 'Tornillo para madera 2"', 'caja', 45.50, 20],
-                ['FER-002', 'Clavo de acero 3"', 'kg', 18.00, 50],
-                ['FER-003', 'Martillo de uña 16 oz', 'unidad', 95.00, 10],
-                ['FER-004', 'Cinta métrica 5 m', 'unidad', 55.00, 15],
-            ],
-            'Eléctricos' => [
-                ['ELE-001', 'Cable THHN calibre 12', 'rollo', 650.00, 8],
-                ['ELE-002', 'Tomacorriente doble', 'unidad', 22.00, 40],
-                ['ELE-003', 'Foco LED 12 W', 'unidad', 18.50, 60],
-            ],
-            'Limpieza' => [
-                ['LIM-001', 'Desinfectante multiusos', 'litro', 24.00, 30],
-                ['LIM-002', 'Bolsa para basura jumbo', 'paquete', 35.00, 25],
-            ],
-            'Empaque' => [
-                ['EMP-001', 'Caja de cartón 40x30x30', 'unidad', 8.75, 100],
-                ['EMP-002', 'Cinta adhesiva transparente', 'rollo', 12.00, 50],
-                ['EMP-003', 'Plástico stretch film', 'rollo', 110.00, 12],
-            ],
-        ];
+        $customers = collect([
+            ['Importadora Maya, S.A.', '1234567-8', 'Luis Pérez', 'compras@importadoramaya.test', '2333-4455', 'Zona 4, Ciudad de Guatemala'],
+            ['Textiles del Pacífico, S.A.', '7654321-0', 'María López', 'logistica@textilespacifico.test', '2444-5566', 'Mixco, Guatemala'],
+            ['Ferretería La Unión', '5554443-2', 'Jorge Ramírez', 'info@launion.test', '2555-6677', 'Quetzaltenango'],
+        ])->map(fn ($c) => Customer::create(array_combine(['name', 'tax_id', 'contact_name', 'email', 'phone', 'address'], $c)));
 
-        $products = collect();
-        foreach ($catalog as $categoryName => $items) {
-            $category = Category::create(['name' => $categoryName]);
-            foreach ($items as [$sku, $name, $unit, $cost, $min]) {
-                $products->push(Product::create([
-                    'sku' => $sku, 'name' => $name, 'unit' => $unit, 'cost' => $cost,
-                    'min_stock' => $min, 'category_id' => $category->id,
-                ]));
-            }
-        }
-
-        $suppliers = collect([
-            ['Distribuidora El Martillo, S.A.', '1234567-8', 'Luis Pérez', 'ventas@elmartillo.test', '2333-4455'],
-            ['Eléctrica Industrial, S.A.', '7654321-0', 'María López', 'pedidos@electrica.test', '2444-5566'],
-            ['Empaques y Más', '5554443-2', 'Jorge Ramírez', 'info@empaques.test', '2555-6677'],
-        ])->map(fn ($s) => Supplier::create(array_combine(['name', 'tax_id', 'contact_name', 'email', 'phone'], $s)));
-
-        // Initial stock: 20 days ago, an entry per warehouse.
-        foreach ([$central, $norte, $sur] as $i => $warehouse) {
-            $inventory->register([
-                'type' => MovementType::Entry->value,
-                'warehouse_id' => $warehouse->id,
-                'supplier_id' => $suppliers[$i]->id,
-                'reference' => 'FAC-'.(1000 + $i),
-                'notes' => 'Inventario inicial',
-                'occurred_at' => Carbon::now()->subDays(20)->toDateTimeString(),
-                'items' => $products->map(fn (Product $p) => [
-                    'product_id' => $p->id,
-                    'quantity' => (int) $p->min_stock * random_int(3, 6),
-                    'unit_cost' => $p->cost,
-                ])->all(),
-            ], $supervisor);
-        }
-
-        // Daily activity for the last two weeks.
-        for ($day = 13; $day >= 0; $day--) {
-            $date = Carbon::now()->subDays($day)->setTime(random_int(8, 17), random_int(0, 59));
-            $warehouse = [$central, $norte][$day % 2];
-            $picked = $products->random(3);
-
-            $inventory->register([
-                'type' => MovementType::Exit->value,
-                'warehouse_id' => $warehouse->id,
-                'reference' => 'OT-'.(5000 + $day),
-                'occurred_at' => $date->toDateTimeString(),
-                'items' => $picked->map(fn (Product $p) => [
-                    'product_id' => $p->id,
-                    'quantity' => max(1, (int) ($p->min_stock * 0.4)),
-                ])->values()->all(),
-            ], $operator);
-
-            if ($day % 3 === 0) {
-                $inventory->register([
-                    'type' => MovementType::Entry->value,
-                    'warehouse_id' => $warehouse->id,
-                    'supplier_id' => $suppliers->random()->id,
-                    'reference' => 'FAC-'.(2000 + $day),
-                    'occurred_at' => $date->copy()->addHour()->toDateTimeString(),
-                    'items' => $products->random(4)->map(fn (Product $p) => [
-                        'product_id' => $p->id,
-                        'quantity' => (int) $p->min_stock,
-                        'unit_cost' => $p->cost,
-                    ])->values()->all(),
-                ], $supervisor);
-            }
-        }
-
-        $inventory->register([
-            'type' => MovementType::Transfer->value,
+        $reception->register([
+            'customer_id' => $customers[0]->id,
             'warehouse_id' => $central->id,
-            'destination_warehouse_id' => $sur->id,
-            'reference' => 'TR-0001',
-            'notes' => 'Reabastecimiento de bodega sur',
-            'occurred_at' => Carbon::now()->subDays(2)->toDateTimeString(),
-            'items' => $products->take(3)->map(fn (Product $p) => ['product_id' => $p->id, 'quantity' => 5])->all(),
-        ], $supervisor);
-
-        // Force a couple of low-stock alerts.
-        $inventory->register([
-            'type' => MovementType::Adjustment->value,
-            'warehouse_id' => $norte->id,
-            'reference' => 'CONTEO-01',
-            'notes' => 'Conteo físico mensual',
-            'occurred_at' => Carbon::now()->subDay()->toDateTimeString(),
-            'items' => [
-                ['product_id' => $products[4]->id, 'quantity' => 2],
-                ['product_id' => $products[9]->id, 'quantity' => 15],
+            'transport_mode' => 'maritimo',
+            'transport_document' => 'MSCU7788123',
+            'duca' => '4-2026-001234',
+            'carrier' => 'MSC',
+            'origin' => 'Shanghái, China (Puerto Quetzal)',
+            'received_at' => Carbon::now()->subDays(12)->toDateTimeString(),
+            'notes' => 'Contenedor 40 HC con herramientas.',
+            'units' => [
+                ['type' => 'contenedor', 'description' => 'Contenedor 40 HC', 'weight_kg' => 18500, 'volume_m3' => 67, 'location' => 'Patio A'],
+                ['type' => 'palet', 'parent_index' => 0, 'description' => 'Herramientas manuales', 'pieces' => 480, 'weight_kg' => 950, 'location' => 'A-01'],
+                ['type' => 'palet', 'parent_index' => 0, 'description' => 'Herramientas eléctricas', 'pieces' => 120, 'weight_kg' => 780, 'location' => 'A-02'],
             ],
         ], $supervisor);
+
+        $reception->register([
+            'customer_id' => $customers[1]->id,
+            'warehouse_id' => $norte->id,
+            'transport_mode' => 'aereo',
+            'transport_document' => '176-12345678',
+            'duca' => '4-2026-001301',
+            'carrier' => 'Avianca Cargo',
+            'origin' => 'Miami, EE. UU.',
+            'received_at' => Carbon::now()->subDays(5)->toDateTimeString(),
+            'units' => [
+                ['type' => 'palet', 'description' => 'Telas importadas', 'pieces' => 60, 'weight_kg' => 420, 'volume_m3' => 2.4, 'location' => 'N-05'],
+                ['type' => 'caja', 'parent_index' => 0, 'description' => 'Rollos de tela', 'pieces' => 30, 'weight_kg' => 210],
+                ['type' => 'caja', 'parent_index' => 0, 'description' => 'Rollos de tela', 'pieces' => 30, 'weight_kg' => 210],
+            ],
+        ], $operator);
+
+        $reception->register([
+            'customer_id' => $customers[2]->id,
+            'warehouse_id' => $central->id,
+            'transport_mode' => 'terrestre',
+            'transport_document' => 'CP-558812',
+            'duca' => '4-2026-001377',
+            'carrier' => 'Transportes del Istmo',
+            'origin' => 'Ciudad de México, México',
+            'received_at' => Carbon::now()->subDays(1)->toDateTimeString(),
+            'units' => [
+                ['type' => 'bulto', 'description' => 'Bultos de accesorios', 'pieces' => 24, 'weight_kg' => 310, 'location' => 'C-12'],
+                ['type' => 'bulto', 'description' => 'Bultos de accesorios', 'pieces' => 24, 'weight_kg' => 305, 'location' => 'C-12'],
+            ],
+        ], $operator);
     }
 }

@@ -14,7 +14,7 @@ const name = usePage().props.name;
     <div class="ml-1 grid flex-1 text-left text-sm">
         <span class="truncate leading-tight font-bold">{{ name }}</span>
         <span class="truncate text-xs text-sidebar-foreground/60"
-            >Gestión de inventario</span
+            >Almacenaje y entregas</span
         >
     </div>
 </template>

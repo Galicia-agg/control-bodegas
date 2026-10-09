@@ -20,11 +20,12 @@ class WarehouseController extends Controller
         $warehouses = Warehouse::query()
             ->accessibleBy($request->user())
             ->with('manager:id,name')
-            ->withCount(['stocks as products_count' => fn ($q) => $q->where('quantity', '>', 0)])
-            ->addSelect(['stock_value' => DB::table('stocks')
-                ->join('products', 'products.id', '=', 'stocks.product_id')
-                ->whereColumn('stocks.warehouse_id', 'warehouses.id')
-                ->selectRaw('COALESCE(SUM(stocks.quantity * products.cost), 0)')])
+            ->withCount(['receipts as active_receipts_count' => fn ($q) => $q->where('status', '!=', 'finalizado')])
+            ->addSelect(['stored_units_count' => DB::table('storage_units')
+                ->join('receipts', 'receipts.id', '=', 'storage_units.receipt_id')
+                ->whereColumn('receipts.warehouse_id', 'warehouses.id')
+                ->where('storage_units.status', 'almacenado')
+                ->selectRaw('COUNT(*)')])
             ->when($search, fn ($q) => $q->where(fn ($q) => $q
                 ->whereLike('name', "%{$search}%")
                 ->orWhereLike('code', "%{$search}%")))
@@ -57,8 +58,8 @@ class WarehouseController extends Controller
 
     public function destroy(Warehouse $warehouse): RedirectResponse
     {
-        if ($warehouse->movements()->exists()) {
-            $this->toast('La bodega tiene movimientos registrados; desactívala en lugar de eliminarla.', 'error');
+        if ($warehouse->receipts()->exists()) {
+            $this->toast('La bodega tiene ingresos registrados; desactívala en lugar de eliminarla.', 'error');
 
             return back();
         }

@@ -64,11 +64,11 @@ class User extends Authenticatable implements PasskeyUser
     }
 
     /**
-     * @return HasMany<Movement, $this>
+     * @return HasMany<Receipt, $this>
      */
-    public function movements(): HasMany
+    public function receipts(): HasMany
     {
-        return $this->hasMany(Movement::class);
+        return $this->hasMany(Receipt::class);
     }
 
     public function canAccessAllWarehouses(): bool

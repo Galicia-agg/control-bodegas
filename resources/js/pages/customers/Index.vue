@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { Mail, Pencil, Phone, Plus, Trash2, Truck } from '@lucide/vue';
+import { Mail, Pencil, Phone, Plus, Trash2, UsersRound } from '@lucide/vue';
 import { ref } from 'vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import DataCard from '@/components/DataCard.vue';
@@ -33,15 +33,15 @@ import {
 } from '@/components/ui/table';
 import { useFilters } from '@/composables/useFilters';
 import { usePermissions } from '@/composables/usePermissions';
-import { destroy, index, store, update } from '@/routes/suppliers';
-import type { Paginated, Supplier } from '@/types';
+import { destroy, index, store, update } from '@/routes/customers';
+import type { Paginated, Customer } from '@/types';
 
 defineOptions({
-    layout: { breadcrumbs: [{ title: 'Proveedores', href: index() }] },
+    layout: { breadcrumbs: [{ title: 'Clientes', href: index() }] },
 });
 
 const props = defineProps<{
-    suppliers: Paginated<Supplier>;
+    customers: Paginated<Customer>;
     filters: { search: string };
 }>();
 
@@ -51,26 +51,28 @@ const { filters } = useFilters(index.url(), {
 });
 
 const dialogOpen = ref(false);
-const editing = ref<Supplier | null>(null);
+const editing = ref<Customer | null>(null);
 const form = useForm({
     name: '',
     tax_id: '',
     contact_name: '',
     email: '',
     phone: '',
+    address: '',
     is_active: true,
 });
 
-const openForm = (supplier?: Supplier) => {
-    editing.value = supplier ?? null;
+const openForm = (customer?: Customer) => {
+    editing.value = customer ?? null;
     form.clearErrors();
     form.defaults({
-        name: supplier?.name ?? '',
-        tax_id: supplier?.tax_id ?? '',
-        contact_name: supplier?.contact_name ?? '',
-        email: supplier?.email ?? '',
-        phone: supplier?.phone ?? '',
-        is_active: supplier?.is_active ?? true,
+        name: customer?.name ?? '',
+        tax_id: customer?.tax_id ?? '',
+        contact_name: customer?.contact_name ?? '',
+        email: customer?.email ?? '',
+        phone: customer?.phone ?? '',
+        address: customer?.address ?? '',
+        is_active: customer?.is_active ?? true,
     });
     form.reset();
     dialogOpen.value = true;
@@ -89,7 +91,7 @@ const submit = () => {
     }
 };
 
-const deleting = ref<Supplier | null>(null);
+const deleting = ref<Customer | null>(null);
 const confirmDelete = () => {
     if (!deleting.value) return;
     router.delete(destroy.url(deleting.value.id), {
@@ -100,16 +102,16 @@ const confirmDelete = () => {
 </script>
 
 <template>
-    <Head title="Proveedores" />
+    <Head title="Clientes" />
 
     <div class="flex flex-1 flex-col gap-6 p-4 md:p-6">
         <PageHeader
-            title="Proveedores"
-            description="Empresas que abastecen tus bodegas."
+            title="Clientes"
+            description="Dueños de la mercadería que almacenas."
         >
             <template #actions>
-                <Button v-if="can('suppliers.manage')" @click="openForm()">
-                    <Plus /> Nuevo proveedor
+                <Button v-if="can('customers.manage')" @click="openForm()">
+                    <Plus /> Nuevo cliente
                 </Button>
             </template>
         </PageHeader>
@@ -121,27 +123,27 @@ const confirmDelete = () => {
                     placeholder="Buscar por nombre, NIT o contacto…"
                 />
             </template>
-            <Table v-if="suppliers.data.length">
+            <Table v-if="customers.data.length">
                 <TableHeader>
                     <TableRow>
-                        <TableHead>Proveedor</TableHead>
+                        <TableHead>Cliente</TableHead>
                         <TableHead>NIT</TableHead>
                         <TableHead>Contacto</TableHead>
-                        <TableHead class="text-right">Entradas</TableHead>
+                        <TableHead class="text-right">Ingresos</TableHead>
                         <TableHead>Estado</TableHead>
-                        <TableHead v-if="can('suppliers.manage')" class="w-24"
+                        <TableHead v-if="can('customers.manage')" class="w-24"
                             ><span class="sr-only">Acciones</span></TableHead
                         >
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    <TableRow v-for="s in suppliers.data" :key="s.id">
+                    <TableRow v-for="s in customers.data" :key="s.id">
                         <TableCell>
                             <div class="flex items-center gap-3">
                                 <div
-                                    class="grid size-9 place-items-center rounded-lg bg-info/12 text-info"
+                                    class="grid size-9 place-items-center rounded-lg bg-primary/10 text-primary"
                                 >
-                                    <Truck class="size-4" />
+                                    <UsersRound class="size-4" />
                                 </div>
                                 <span class="font-medium">{{ s.name }}</span>
                             </div>
@@ -169,13 +171,13 @@ const confirmDelete = () => {
                             </div>
                         </TableCell>
                         <TableCell class="text-right tabular">{{
-                            s.movements_count
+                            s.receipts_count
                         }}</TableCell>
                         <TableCell
                             ><StatusBadge :active="s.is_active"
                         /></TableCell>
                         <TableCell
-                            v-if="can('suppliers.manage')"
+                            v-if="can('customers.manage')"
                             class="text-right"
                         >
                             <div class="flex justify-end gap-1">
@@ -203,11 +205,11 @@ const confirmDelete = () => {
             </Table>
             <EmptyState
                 v-else
-                :icon="Truck"
-                title="No hay proveedores"
-                description="Registra proveedores para asociarlos a las entradas."
+                :icon="UsersRound"
+                title="No hay clientes"
+                description="Registra a los clientes cuya mercadería vas a almacenar."
             />
-            <Pagination :paginator="suppliers" />
+            <Pagination :paginator="customers" />
         </DataCard>
     </div>
 
@@ -215,7 +217,7 @@ const confirmDelete = () => {
         <DialogContent class="sm:max-w-lg">
             <DialogHeader>
                 <DialogTitle>{{
-                    editing ? 'Editar proveedor' : 'Nuevo proveedor'
+                    editing ? 'Editar cliente' : 'Nuevo cliente'
                 }}</DialogTitle>
                 <DialogDescription
                     >Información fiscal y de contacto.</DialogDescription
@@ -264,8 +266,15 @@ const confirmDelete = () => {
                         <Input id="phone" v-model="form.phone" type="tel" />
                     </FormField>
                 </div>
+                <FormField
+                    label="Dirección"
+                    for="address"
+                    :error="form.errors.address"
+                >
+                    <Input id="address" v-model="form.address" />
+                </FormField>
                 <Label class="flex items-center gap-3">
-                    <Checkbox v-model="form.is_active" /> Proveedor activo
+                    <Checkbox v-model="form.is_active" /> Cliente activo
                 </Label>
                 <DialogFooter class="gap-2">
                     <Button
@@ -285,7 +294,7 @@ const confirmDelete = () => {
     <ConfirmDialog
         :open="!!deleting"
         :title="`¿Eliminar ${deleting?.name ?? ''}?`"
-        description="Las entradas existentes conservarán el registro sin proveedor."
+        description="Solo se pueden eliminar clientes sin ingresos registrados."
         @update:open="(v) => !v && (deleting = null)"
         @confirm="confirmDelete"
     />

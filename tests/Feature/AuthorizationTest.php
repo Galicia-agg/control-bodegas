@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\Product;
+use App\Models\Customer;
 use App\Models\User;
 use App\Models\Warehouse;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -39,7 +39,7 @@ class AuthorizationTest extends TestCase
         $this->actingAs($operator)->get(route('users.index'))->assertForbidden();
         $this->actingAs($operator)->get(route('roles.index'))->assertForbidden();
         $this->actingAs($operator)->post(route('warehouses.store'), ['code' => 'X', 'name' => 'X'])->assertForbidden();
-        $this->actingAs($operator)->get(route('stock.index'))->assertOk();
+        $this->actingAs($operator)->get(route('receipts.index'))->assertOk();
     }
 
     public function test_operator_only_operates_assigned_warehouses(): void
@@ -47,39 +47,31 @@ class AuthorizationTest extends TestCase
         $operator = User::factory()->create()->assignRole('Bodeguero');
         [$assigned, $other] = Warehouse::factory()->count(2)->create();
         $operator->warehouses()->attach($assigned);
-        $product = Product::factory()->create();
+        $customer = Customer::factory()->create();
 
-        $item = [['product_id' => $product->id, 'quantity' => 1]];
+        $data = fn (Warehouse $warehouse) => [
+            'customer_id' => $customer->id,
+            'warehouse_id' => $warehouse->id,
+            'transport_mode' => 'maritimo',
+            'units' => [['type' => 'contenedor']],
+        ];
 
         $this->actingAs($operator)
-            ->post(route('movements.store'), ['type' => 'entrada', 'warehouse_id' => $other->id, 'items' => $item])
+            ->post(route('receipts.store'), $data($other))
             ->assertSessionHasErrors('warehouse_id');
 
         $this->actingAs($operator)
-            ->post(route('movements.store'), ['type' => 'entrada', 'warehouse_id' => $assigned->id, 'items' => $item])
+            ->post(route('receipts.store'), $data($assigned))
             ->assertSessionHasNoErrors();
-    }
-
-    public function test_operator_cannot_register_adjustments(): void
-    {
-        $operator = User::factory()->create()->assignRole('Bodeguero');
-        $warehouse = Warehouse::factory()->create();
-        $operator->warehouses()->attach($warehouse);
-
-        $this->actingAs($operator)->post(route('movements.store'), [
-            'type' => 'ajuste',
-            'warehouse_id' => $warehouse->id,
-            'items' => [['product_id' => Product::factory()->create()->id, 'quantity' => 1]],
-        ])->assertForbidden();
     }
 
     public function test_auditor_is_read_only(): void
     {
         $auditor = User::factory()->create()->assignRole('Auditor');
 
-        $this->actingAs($auditor)->get(route('movements.index'))->assertOk();
-        $this->actingAs($auditor)->get(route('movements.create'))->assertForbidden();
-        $this->actingAs($auditor)->post(route('products.store'), [])->assertForbidden();
+        $this->actingAs($auditor)->get(route('receipts.index'))->assertOk();
+        $this->actingAs($auditor)->get(route('receipts.create'))->assertForbidden();
+        $this->actingAs($auditor)->post(route('customers.store'), [])->assertForbidden();
     }
 
     public function test_inactive_users_are_logged_out(): void

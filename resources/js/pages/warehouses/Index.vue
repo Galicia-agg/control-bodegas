@@ -34,7 +34,7 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { Spinner } from '@/components/ui/spinner';
 import { useFilters } from '@/composables/useFilters';
 import { usePermissions } from '@/composables/usePermissions';
-import { formatCurrency, formatNumber } from '@/lib/format';
+import { formatNumber } from '@/lib/format';
 import { destroy, index, store, update } from '@/routes/warehouses';
 import type { Option, Paginated, Warehouse } from '@/types';
 
@@ -186,16 +186,18 @@ const confirmDelete = () => {
                     <div class="mt-5 grid grid-cols-2 gap-3 border-t pt-4">
                         <div>
                             <p class="text-xs text-muted-foreground">
-                                Productos
+                                Ingresos activos
                             </p>
                             <p class="font-semibold tabular">
-                                {{ formatNumber(w.products_count) }}
+                                {{ formatNumber(w.active_receipts_count) }}
                             </p>
                         </div>
                         <div>
-                            <p class="text-xs text-muted-foreground">Valor</p>
+                            <p class="text-xs text-muted-foreground">
+                                Unidades almacenadas
+                            </p>
                             <p class="font-semibold tabular">
-                                {{ formatCurrency(w.stock_value) }}
+                                {{ formatNumber(w.stored_units_count) }}
                             </p>
                         </div>
                     </div>

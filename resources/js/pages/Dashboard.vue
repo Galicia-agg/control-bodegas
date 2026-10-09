@@ -2,30 +2,22 @@
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import {
     ArrowRight,
-    Boxes,
     Building2,
     CalendarClock,
-    CircleDollarSign,
-    TriangleAlert,
+    PackageCheck,
+    Package,
+    UsersRound,
 } from '@lucide/vue';
 import { computed } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
-import MovementTypeBadge from '@/components/MovementTypeBadge.vue';
+import ReceiptStatusBadge from '@/components/ReceiptStatusBadge.vue';
 import StatCard from '@/components/StatCard.vue';
+import TransportModeBadge from '@/components/TransportModeBadge.vue';
 import { usePermissions } from '@/composables/usePermissions';
-import {
-    formatCompactCurrency,
-    formatCurrency,
-    formatDateTime,
-    formatNumber,
-} from '@/lib/format';
+import { formatDateTime, formatNumber } from '@/lib/format';
 import { dashboard } from '@/routes';
-import {
-    index as movementsIndex,
-    show as movementShow,
-} from '@/routes/movements';
-import { index as stockIndex } from '@/routes/stock';
-import type { Movement, Stock } from '@/types';
+import { index as receiptsIndex, show as receiptShow } from '@/routes/receipts';
+import type { Receipt } from '@/types';
 
 defineOptions({
     layout: {
@@ -35,16 +27,14 @@ defineOptions({
 
 const props = defineProps<{
     stats: {
-        products: number;
-        warehouses: number;
-        inventoryValue: number;
-        lowStock: number;
-        movementsToday: number;
+        activeReceipts: number;
+        storedUnits: number;
+        customers: number;
+        receiptsToday: number;
     };
-    activity: { date: string; entries: number; exits: number }[];
-    recentMovements: Movement[];
-    lowStock: Stock[];
-    byWarehouse: { id: number; code: string; name: string; value: number }[];
+    activity: { date: string; receipts: number }[];
+    recentReceipts: Receipt[];
+    byWarehouse: { id: number; code: string; name: string; units: number }[];
 }>();
 
 const { can } = usePermissions();
@@ -61,14 +51,13 @@ const greeting = computed(() => {
 });
 
 const maxActivity = computed(() =>
-    Math.max(1, ...props.activity.flatMap((d) => [d.entries, d.exits])),
+    Math.max(1, ...props.activity.map((d) => d.receipts)),
 );
-const totals = computed(() => ({
-    entries: props.activity.reduce((sum, d) => sum + d.entries, 0),
-    exits: props.activity.reduce((sum, d) => sum + d.exits, 0),
-}));
+const totalReceipts = computed(() =>
+    props.activity.reduce((sum, d) => sum + d.receipts, 0),
+);
 const maxWarehouse = computed(() =>
-    Math.max(1, ...props.byWarehouse.map((w) => w.value)),
+    Math.max(1, ...props.byWarehouse.map((w) => w.units)),
 );
 
 const dayLabel = (date: string) =>
@@ -86,7 +75,7 @@ const dayLabel = (date: string) =>
                 {{ greeting }}, {{ user.name.split(' ')[0] }}
             </h1>
             <p class="text-sm text-muted-foreground">
-                Resumen del estado de tus bodegas e inventario.
+                Resumen de la mercadería que almacenas para tus clientes.
             </p>
         </div>
 
@@ -95,31 +84,29 @@ const dayLabel = (date: string) =>
             aria-label="Indicadores"
         >
             <StatCard
-                label="Valor del inventario"
-                :value="formatCompactCurrency(stats.inventoryValue)"
-                :icon="CircleDollarSign"
-                :hint="formatCurrency(stats.inventoryValue)"
+                label="Ingresos activos"
+                :value="formatNumber(stats.activeReceipts)"
+                :icon="PackageCheck"
+                hint="Con mercadería aún en bodega"
             />
             <StatCard
-                label="Productos activos"
-                :value="formatNumber(stats.products)"
-                :icon="Boxes"
+                label="Unidades almacenadas"
+                :value="formatNumber(stats.storedUnits)"
+                :icon="Package"
                 tone="info"
-                :hint="`En ${stats.warehouses} bodega${stats.warehouses === 1 ? '' : 's'}`"
+                hint="Contenedores, palets, cajas y bultos"
             />
             <StatCard
-                label="Alertas de stock bajo"
-                :value="formatNumber(stats.lowStock)"
-                :icon="TriangleAlert"
-                :tone="stats.lowStock > 0 ? 'warning' : 'success'"
-                hint="Existencias en o bajo el mínimo"
-            />
-            <StatCard
-                label="Movimientos hoy"
-                :value="formatNumber(stats.movementsToday)"
-                :icon="CalendarClock"
+                label="Clientes activos"
+                :value="formatNumber(stats.customers)"
+                :icon="UsersRound"
                 tone="success"
-                hint="Entradas, salidas, transferencias y ajustes"
+            />
+            <StatCard
+                label="Ingresos hoy"
+                :value="formatNumber(stats.receiptsToday)"
+                :icon="CalendarClock"
+                tone="warning"
             />
         </section>
 
@@ -127,52 +114,34 @@ const dayLabel = (date: string) =>
             <div class="rounded-xl border bg-card p-5 shadow-xs xl:col-span-2">
                 <div class="flex flex-wrap items-start justify-between gap-4">
                     <div>
-                        <h2 class="font-semibold">Actividad de 14 días</h2>
+                        <h2 class="font-semibold">Ingresos de 14 días</h2>
                         <p class="text-sm text-muted-foreground">
-                            Unidades que entraron y salieron por día
+                            Recepciones registradas por día
                         </p>
                     </div>
-                    <div class="flex gap-4 text-sm">
-                        <div class="flex items-center gap-2">
-                            <span class="size-2.5 rounded-sm bg-chart-1" />
-                            Entradas
-                            <span class="font-semibold tabular">{{
-                                formatNumber(totals.entries)
-                            }}</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <span class="size-2.5 rounded-sm bg-chart-2" />
-                            Salidas
-                            <span class="font-semibold tabular">{{
-                                formatNumber(totals.exits)
-                            }}</span>
-                        </div>
-                    </div>
+                    <p class="text-sm">
+                        Total
+                        <span class="font-semibold tabular">{{
+                            formatNumber(totalReceipts)
+                        }}</span>
+                    </p>
                 </div>
 
                 <div
                     class="mt-6 flex h-56 items-end gap-1.5 sm:gap-2"
                     role="img"
-                    :aria-label="`Entradas: ${formatNumber(totals.entries)}, salidas: ${formatNumber(totals.exits)} en 14 días`"
+                    :aria-label="`${formatNumber(totalReceipts)} ingresos en 14 días`"
                 >
                     <div
                         v-for="day in activity"
                         :key="day.date"
                         class="group relative flex h-full flex-1 flex-col justify-end"
                     >
-                        <div
-                            class="flex h-full items-end justify-center gap-0.5"
-                        >
+                        <div class="flex h-full items-end justify-center">
                             <div
-                                class="w-full max-w-3 rounded-t-sm bg-chart-1 transition-opacity duration-150 group-hover:opacity-80"
+                                class="w-full max-w-5 rounded-t-sm bg-chart-1 transition-opacity duration-150 group-hover:opacity-80"
                                 :style="{
-                                    height: `${(day.entries / maxActivity) * 100}%`,
-                                }"
-                            />
-                            <div
-                                class="w-full max-w-3 rounded-t-sm bg-chart-2 transition-opacity duration-150 group-hover:opacity-80"
-                                :style="{
-                                    height: `${(day.exits / maxActivity) * 100}%`,
+                                    height: `${(day.receipts / maxActivity) * 100}%`,
                                 }"
                             />
                         </div>
@@ -182,12 +151,7 @@ const dayLabel = (date: string) =>
                             <p class="font-semibold">
                                 {{ dayLabel(day.date) }}
                             </p>
-                            <p class="text-success">
-                                Entradas: {{ formatNumber(day.entries) }}
-                            </p>
-                            <p class="text-destructive">
-                                Salidas: {{ formatNumber(day.exits) }}
-                            </p>
+                            <p>Ingresos: {{ formatNumber(day.receipts) }}</p>
                         </div>
                     </div>
                 </div>
@@ -202,9 +166,9 @@ const dayLabel = (date: string) =>
             </div>
 
             <div class="rounded-xl border bg-card p-5 shadow-xs">
-                <h2 class="font-semibold">Valor por bodega</h2>
+                <h2 class="font-semibold">Unidades por bodega</h2>
                 <p class="text-sm text-muted-foreground">
-                    Costo total de las existencias
+                    Mercadería actualmente almacenada
                 </p>
                 <ul v-if="byWarehouse.length" class="mt-5 space-y-4">
                     <li
@@ -224,14 +188,14 @@ const dayLabel = (date: string) =>
                                 }}</span>
                             </span>
                             <span class="font-semibold tabular">{{
-                                formatCompactCurrency(w.value)
+                                formatNumber(w.units)
                             }}</span>
                         </div>
                         <div class="h-2 overflow-hidden rounded-full bg-muted">
                             <div
                                 class="h-full rounded-full bg-primary transition-[width] duration-500"
                                 :style="{
-                                    width: `${(w.value / maxWarehouse) * 100}%`,
+                                    width: `${(w.units / maxWarehouse) * 100}%`,
                                 }"
                             />
                         </div>
@@ -246,114 +210,55 @@ const dayLabel = (date: string) =>
             </div>
         </section>
 
-        <section class="grid gap-4 xl:grid-cols-5">
-            <div
-                class="overflow-hidden rounded-xl border bg-card shadow-xs xl:col-span-3"
-            >
+        <section>
+            <div class="overflow-hidden rounded-xl border bg-card shadow-xs">
                 <div class="flex items-center justify-between border-b p-4">
-                    <h2 class="font-semibold">Movimientos recientes</h2>
+                    <h2 class="font-semibold">Ingresos recientes</h2>
                     <Link
-                        v-if="can('movements.view')"
-                        :href="movementsIndex()"
+                        v-if="can('receipts.view')"
+                        :href="receiptsIndex()"
                         class="inline-flex items-center gap-1 rounded-md text-sm font-medium text-primary hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                     >
                         Ver todos <ArrowRight class="size-4" />
                     </Link>
                 </div>
-                <ul v-if="recentMovements.length" class="divide-y">
-                    <li v-for="m in recentMovements" :key="m.id">
+                <ul v-if="recentReceipts.length" class="divide-y">
+                    <li v-for="r in recentReceipts" :key="r.id">
                         <Link
-                            :href="movementShow(m.id)"
+                            :href="receiptShow(r.id)"
                             class="flex items-center gap-4 px-4 py-3 transition-colors duration-150 hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-none"
                         >
-                            <MovementTypeBadge
-                                :type="m.type"
+                            <ReceiptStatusBadge
+                                :status="r.status"
                                 class="w-32 justify-center"
                             />
                             <div class="min-w-0 flex-1">
                                 <p class="truncate text-sm font-medium">
-                                    <span class="font-mono">{{ m.folio }}</span>
-                                    · {{ m.warehouse.name }}
-                                    <template v-if="m.destination_warehouse">
-                                        → {{ m.destination_warehouse.name }}
-                                    </template>
+                                    <span class="font-mono">{{ r.folio }}</span>
+                                    · {{ r.customer.name }}
                                 </p>
                                 <p
                                     class="truncate text-xs text-muted-foreground"
                                 >
-                                    {{ m.items_count }} producto(s) ·
-                                    {{ m.user.name }}
+                                    {{ r.warehouse.name }} ·
+                                    {{ r.units_count }} unidad(es)
                                 </p>
                             </div>
+                            <TransportModeBadge
+                                :mode="r.transport_mode"
+                                class="hidden sm:inline-flex"
+                            />
                             <span
                                 class="hidden text-xs whitespace-nowrap text-muted-foreground sm:block"
-                                >{{ formatDateTime(m.occurred_at) }}</span
+                                >{{ formatDateTime(r.received_at) }}</span
                             >
                         </Link>
                     </li>
                 </ul>
                 <EmptyState
                     v-else
-                    title="Aún no hay movimientos"
-                    description="Los movimientos registrados aparecerán aquí."
-                />
-            </div>
-
-            <div
-                class="overflow-hidden rounded-xl border bg-card shadow-xs xl:col-span-2"
-            >
-                <div class="flex items-center justify-between border-b p-4">
-                    <h2 class="flex items-center gap-2 font-semibold">
-                        <TriangleAlert class="size-4 text-warning" />
-                        Stock bajo
-                    </h2>
-                    <Link
-                        v-if="can('stock.view')"
-                        :href="stockIndex({ query: { low: 1 } })"
-                        class="inline-flex items-center gap-1 rounded-md text-sm font-medium text-primary hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                    >
-                        Ver alertas <ArrowRight class="size-4" />
-                    </Link>
-                </div>
-                <ul v-if="lowStock.length" class="divide-y">
-                    <li
-                        v-for="s in lowStock"
-                        :key="s.id"
-                        class="flex items-center justify-between gap-3 px-4 py-3"
-                    >
-                        <div class="min-w-0">
-                            <p class="truncate text-sm font-medium">
-                                {{ s.product.name }}
-                            </p>
-                            <p class="truncate text-xs text-muted-foreground">
-                                <span class="font-mono">{{
-                                    s.product.sku
-                                }}</span>
-                                · {{ s.warehouse.name }}
-                            </p>
-                        </div>
-                        <div class="text-right">
-                            <p
-                                class="text-sm font-bold tabular"
-                                :class="
-                                    Number(s.quantity) <= 0
-                                        ? 'text-destructive'
-                                        : 'text-warning-foreground dark:text-warning'
-                                "
-                            >
-                                {{ formatNumber(s.quantity) }}
-                            </p>
-                            <p class="text-xs text-muted-foreground tabular">
-                                mín. {{ formatNumber(s.product.min_stock) }}
-                            </p>
-                        </div>
-                    </li>
-                </ul>
-                <EmptyState
-                    v-else
-                    :icon="Boxes"
-                    title="Todo en orden"
-                    description="Ningún producto está por debajo de su mínimo."
+                    title="Aún no hay ingresos"
+                    description="Los ingresos registrados aparecerán aquí."
                 />
             </div>
         </section>

@@ -21,76 +21,63 @@ export type Warehouse = {
     manager_id: number | null;
     manager?: Option | null;
     is_active: boolean;
-    products_count?: number;
-    stock_value?: string | number;
+    active_receipts_count?: number;
+    stored_units_count?: number;
 };
 
-export type Category = {
-    id: number;
-    name: string;
-    description: string | null;
-    products_count?: number;
-};
-
-export type Supplier = {
+export type Customer = {
     id: number;
     name: string;
     tax_id: string | null;
     contact_name: string | null;
     email: string | null;
     phone: string | null;
+    address: string | null;
     is_active: boolean;
-    movements_count?: number;
+    receipts_count?: number;
 };
 
-export type Product = {
+export type TransportMode = 'maritimo' | 'aereo' | 'terrestre';
+export type ReceiptStatus = 'activo' | 'parcial' | 'finalizado';
+export type StorageUnitType = 'contenedor' | 'palet' | 'caja' | 'bulto';
+
+export type StorageUnit = {
     id: number;
-    sku: string;
-    name: string;
+    receipt_id: number;
+    parent_id: number | null;
+    type: StorageUnitType;
+    code: string;
     description: string | null;
-    category_id: number | null;
-    category?: Option | null;
-    unit: string;
-    cost: string;
-    min_stock: string;
-    is_active: boolean;
-    total_stock?: string | null;
+    pieces: number | null;
+    weight_kg: string | null;
+    volume_m3: string | null;
+    location: string | null;
+    status: 'almacenado' | 'entregado';
+    delivered_at: string | null;
 };
 
-export type Stock = {
-    id: number;
-    warehouse_id: number;
-    product_id: number;
-    quantity: string;
-    product: Product;
-    warehouse: WarehouseOption;
-};
-
-export type MovementType = 'entrada' | 'salida' | 'transferencia' | 'ajuste';
-
-export type MovementItem = {
-    id: number;
-    product_id: number;
-    quantity: string;
-    unit_cost: string;
-    product: Pick<Product, 'id' | 'sku' | 'name' | 'unit'>;
-};
-
-export type Movement = {
+export type Receipt = {
     id: number;
     folio: string;
-    type: MovementType;
+    customer: Option & {
+        tax_id?: string | null;
+        contact_name?: string | null;
+        phone?: string | null;
+        email?: string | null;
+    };
     warehouse: WarehouseOption;
-    destination_warehouse: WarehouseOption | null;
-    supplier: (Option & { tax_id?: string | null }) | null;
     user: Option;
-    reference: string | null;
+    transport_mode: TransportMode;
+    transport_document: string | null;
+    duca: string | null;
+    carrier: string | null;
+    origin: string | null;
+    status: ReceiptStatus;
+    received_at: string;
     notes: string | null;
-    occurred_at: string;
-    created_at: string;
-    items_count?: number;
-    total_quantity?: string | null;
-    items?: MovementItem[];
+    units_count?: number;
+    stored_units_count?: number;
+    units?: StorageUnit[];
 };
 
 export type ManagedUser = {

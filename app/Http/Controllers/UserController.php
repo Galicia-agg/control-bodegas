@@ -88,9 +88,9 @@ class UserController extends Controller
             return back();
         }
 
-        if ($user->movements()->exists()) {
+        if ($user->receipts()->exists()) {
             $user->update(['is_active' => false]);
-            $this->toast('El usuario tiene movimientos registrados; se desactivó en lugar de eliminarse.', 'warning');
+            $this->toast('El usuario tiene ingresos registrados; se desactivó en lugar de eliminarse.', 'warning');
 
             return back();
         }

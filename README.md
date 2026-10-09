@@ -1,6 +1,8 @@
 # Control de Bodegas
 
-Sistema web para administrar bodegas, catálogo de productos, existencias y movimientos de inventario, con autenticación y autorización por roles.
+Sistema web para una bodega que almacena mercadería **importada** (por mar, aire o tierra) de terceros y la entrega a sus clientes, de forma parcial o total, cobrando el almacenaje y las entregas. Incluye autenticación y autorización por roles.
+
+> **Estado:** en transición desde un inventario genérico. Ya están clientes, ingresos y unidades de almacenaje. Pendientes: tarifas y cobros, entregas parciales/totales con comprobante y entrega a domicilio.
 
 ## Stack
 
@@ -33,19 +35,19 @@ Para desarrollo con recarga en caliente: `docker exec -it control-bodegas-app np
 
 Contraseña de todos: `password`
 
-| Correo                  | Rol           | Alcance                                                         |
-| ----------------------- | ------------- | --------------------------------------------------------------- |
-| admin@bodegas.test      | Administrador | Todo (rol protegido)                                            |
-| supervisor@bodegas.test | Supervisor    | Todas las bodegas, catálogos y todos los movimientos            |
-| bodeguero@bodegas.test  | Bodeguero     | Solo Bodega Central y Norte; entradas, salidas y transferencias |
-| auditor@bodegas.test    | Auditor       | Solo lectura de todas las bodegas                               |
+| Correo                  | Rol           | Alcance                                        |
+| ----------------------- | ------------- | ---------------------------------------------- |
+| admin@bodegas.test      | Administrador | Todo (rol protegido)                           |
+| supervisor@bodegas.test | Supervisor    | Todas las bodegas, clientes e ingresos         |
+| bodeguero@bodegas.test  | Bodeguero     | Solo Bodega Central y Norte; registra ingresos |
+| auditor@bodegas.test    | Auditor       | Solo lectura de todas las bodegas              |
 
 ## Módulos
 
-- **Panel**: valor del inventario, alertas de stock bajo, actividad de 14 días, valor por bodega.
-- **Existencias**: stock por producto y bodega, filtros y alertas de mínimos.
-- **Movimientos**: entradas (con proveedor y costo), salidas, transferencias entre bodegas y ajustes por conteo físico. Folios automáticos (`ENT-000001`…), transacciones con bloqueo de filas y validación de stock disponible. Los movimientos son inmutables (bitácora).
-- **Catálogos**: productos, categorías, proveedores y bodegas.
+- **Panel**: ingresos activos, unidades almacenadas, clientes activos y actividad de 14 días.
+- **Ingresos**: recepción de contenedores, furgones o carga aérea para un cliente, con tipo de transporte, BL/guía aérea/carta de porte, DUCA, transportista y origen. Cada ingreso tiene folio automático (`ING-000001`…) y sus unidades de almacenaje.
+- **Unidades de almacenaje**: contenedor, palet, caja o bulto, en jerarquía (un palet dentro de un contenedor, una caja sobre un palet), con código propio, piezas, peso, volumen y ubicación en bodega.
+- **Catálogos**: clientes (dueños de la mercadería) y bodegas.
 - **Administración**: usuarios (rol + bodegas asignadas + activo/inactivo) y roles con matriz de permisos editable.
 
 ## Autorización

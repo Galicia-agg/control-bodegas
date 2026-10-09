@@ -20,19 +20,13 @@ final class Permissions
                 'warehouses.manage' => 'Crear, editar y eliminar bodegas',
                 'warehouses.all' => 'Acceso a todas las bodegas',
             ]],
-            'products' => ['label' => 'Catálogo', 'permissions' => [
-                'products.view' => 'Ver productos y categorías',
-                'products.manage' => 'Administrar productos y categorías',
-                'suppliers.view' => 'Ver proveedores',
-                'suppliers.manage' => 'Administrar proveedores',
+            'customers' => ['label' => 'Clientes', 'permissions' => [
+                'customers.view' => 'Ver clientes',
+                'customers.manage' => 'Administrar clientes',
             ]],
-            'inventory' => ['label' => 'Inventario', 'permissions' => [
-                'stock.view' => 'Consultar existencias',
-                'movements.view' => 'Ver movimientos',
-                'movements.entry' => 'Registrar entradas',
-                'movements.exit' => 'Registrar salidas',
-                'movements.transfer' => 'Registrar transferencias',
-                'movements.adjust' => 'Registrar ajustes de inventario',
+            'receipts' => ['label' => 'Ingresos', 'permissions' => [
+                'receipts.view' => 'Consultar ingresos y mercadería almacenada',
+                'receipts.create' => 'Registrar ingresos de mercadería',
             ]],
             'security' => ['label' => 'Seguridad', 'permissions' => [
                 'users.manage' => 'Administrar usuarios',
@@ -59,14 +53,13 @@ final class Permissions
      */
     public static function defaultRoles(): array
     {
-        $readOnly = ['warehouses.view', 'products.view', 'suppliers.view', 'stock.view', 'movements.view'];
+        $readOnly = ['warehouses.view', 'customers.view', 'receipts.view'];
 
         return [
             'Supervisor' => [
-                ...$readOnly, 'warehouses.manage', 'warehouses.all', 'products.manage', 'suppliers.manage',
-                'movements.entry', 'movements.exit', 'movements.transfer', 'movements.adjust',
+                ...$readOnly, 'warehouses.manage', 'warehouses.all', 'customers.manage', 'receipts.create',
             ],
-            'Bodeguero' => [...$readOnly, 'movements.entry', 'movements.exit', 'movements.transfer'],
+            'Bodeguero' => [...$readOnly, 'receipts.create'],
             'Auditor' => [...$readOnly, 'warehouses.all'],
         ];
     }

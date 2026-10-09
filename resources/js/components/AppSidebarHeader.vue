@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
 import { Monitor, Moon, Plus, Sun } from '@lucide/vue';
-import { computed } from 'vue';
 import Breadcrumbs from '@/components/Breadcrumbs.vue';
 import { Button } from '@/components/ui/button';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useAppearance } from '@/composables/useAppearance';
 import { usePermissions } from '@/composables/usePermissions';
-import { create as createMovement } from '@/routes/movements';
+import { create as createReceipt } from '@/routes/receipts';
 import type { BreadcrumbItem } from '@/types';
 
 withDefaults(
@@ -19,17 +18,8 @@ withDefaults(
     },
 );
 
-const { canAny } = usePermissions();
+const { can } = usePermissions();
 const { appearance, updateAppearance } = useAppearance();
-
-const canMove = computed(() =>
-    canAny(
-        'movements.entry',
-        'movements.exit',
-        'movements.transfer',
-        'movements.adjust',
-    ),
-);
 
 const next = { light: 'dark', dark: 'system', system: 'light' } as const;
 const icons = { light: Sun, dark: Moon, system: Monitor };
@@ -60,10 +50,10 @@ const labels = {
             >
                 <component :is="icons[appearance]" class="size-4" />
             </Button>
-            <Button v-if="canMove" size="sm" as-child>
-                <Link :href="createMovement()">
+            <Button v-if="can('receipts.create')" size="sm" as-child>
+                <Link :href="createReceipt()">
                     <Plus class="size-4" />
-                    <span class="hidden sm:inline">Nuevo movimiento</span>
+                    <span class="hidden sm:inline">Nuevo ingreso</span>
                 </Link>
             </Button>
         </div>

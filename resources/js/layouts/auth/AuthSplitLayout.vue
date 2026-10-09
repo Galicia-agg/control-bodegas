@@ -13,13 +13,13 @@ defineProps<{
 const features = [
     {
         icon: Boxes,
-        title: 'Existencias en tiempo real',
-        text: 'Stock por bodega con alertas de mínimos.',
+        title: 'Mercadería de tus clientes, localizada',
+        text: 'Contenedores, palets y cajas con su ubicación en bodega.',
     },
     {
         icon: ArrowLeftRight,
         title: 'Trazabilidad completa',
-        text: 'Entradas, salidas, transferencias y ajustes con folio.',
+        text: 'Cada ingreso con folio, documento de transporte y DUCA.',
     },
     {
         icon: ShieldCheck,
@@ -68,11 +68,11 @@ const features = [
                     <h2
                         class="text-4xl leading-tight font-bold text-balance text-white"
                     >
-                        Todo tu inventario, ordenado y bajo control.
+                        Almacenaje y entregas, claros para tus clientes.
                     </h2>
                     <p class="text-base text-sidebar-foreground/80">
-                        Administra bodegas, productos y movimientos desde un
-                        solo lugar.
+                        Registra ingresos de importación, controla lo almacenado
+                        y cobra con transparencia.
                     </p>
                 </div>
                 <ul class="space-y-5">

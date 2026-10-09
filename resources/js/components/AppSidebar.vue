@@ -1,14 +1,11 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
 import {
-    ArrowLeftRight,
-    Boxes,
     Building2,
     LayoutDashboard,
-    Package,
+    PackageCheck,
     ShieldCheck,
-    Tags,
-    Truck,
+    UsersRound,
     Users,
 } from '@lucide/vue';
 import { computed } from 'vue';
@@ -26,12 +23,9 @@ import {
 } from '@/components/ui/sidebar';
 import { usePermissions } from '@/composables/usePermissions';
 import { dashboard } from '@/routes';
-import { index as categoriesIndex } from '@/routes/categories';
-import { index as movementsIndex } from '@/routes/movements';
-import { index as productsIndex } from '@/routes/products';
+import { index as customersIndex } from '@/routes/customers';
+import { index as receiptsIndex } from '@/routes/receipts';
 import { index as rolesIndex } from '@/routes/roles';
-import { index as stockIndex } from '@/routes/stock';
-import { index as suppliersIndex } from '@/routes/suppliers';
 import { index as usersIndex } from '@/routes/users';
 import { index as warehousesIndex } from '@/routes/warehouses';
 import type { NavGroup } from '@/types';
@@ -47,16 +41,10 @@ const navigation: NavGroup[] = [
         label: 'Operación',
         items: [
             {
-                title: 'Existencias',
-                href: stockIndex(),
-                icon: Boxes,
-                can: 'stock.view',
-            },
-            {
-                title: 'Movimientos',
-                href: movementsIndex(),
-                icon: ArrowLeftRight,
-                can: 'movements.view',
+                title: 'Ingresos',
+                href: receiptsIndex(),
+                icon: PackageCheck,
+                can: 'receipts.view',
             },
         ],
     },
@@ -64,22 +52,10 @@ const navigation: NavGroup[] = [
         label: 'Catálogos',
         items: [
             {
-                title: 'Productos',
-                href: productsIndex(),
-                icon: Package,
-                can: 'products.view',
-            },
-            {
-                title: 'Categorías',
-                href: categoriesIndex(),
-                icon: Tags,
-                can: 'products.view',
-            },
-            {
-                title: 'Proveedores',
-                href: suppliersIndex(),
-                icon: Truck,
-                can: 'suppliers.view',
+                title: 'Clientes',
+                href: customersIndex(),
+                icon: UsersRound,
+                can: 'customers.view',
             },
             {
                 title: 'Bodegas',
