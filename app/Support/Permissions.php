@@ -28,6 +28,16 @@ final class Permissions
                 'receipts.view' => 'Consultar ingresos y mercadería almacenada',
                 'receipts.create' => 'Registrar ingresos de mercadería',
             ]],
+            'deliveries' => ['label' => 'Entregas', 'permissions' => [
+                'deliveries.view' => 'Consultar entregas',
+                'deliveries.create' => 'Registrar, avanzar y cancelar entregas',
+                'carriers.view' => 'Ver transportistas y flota',
+                'carriers.manage' => 'Administrar transportistas y flota',
+            ]],
+            'vouchers' => ['label' => 'Cobros', 'permissions' => [
+                'vouchers.view' => 'Consultar comprobantes de cobro',
+                'vouchers.collect' => 'Registrar pagos de comprobantes',
+            ]],
             'rates' => ['label' => 'Tarifas', 'permissions' => [
                 'rates.view' => 'Ver tarifas y cobros acumulados',
                 'rates.manage' => 'Administrar tarifas',
@@ -57,14 +67,17 @@ final class Permissions
      */
     public static function defaultRoles(): array
     {
-        $readOnly = ['warehouses.view', 'customers.view', 'receipts.view'];
+        $readOnly = ['warehouses.view', 'customers.view', 'receipts.view', 'deliveries.view', 'carriers.view'];
 
         return [
             'Supervisor' => [
-                ...$readOnly, 'warehouses.manage', 'warehouses.all', 'customers.manage', 'receipts.create', 'rates.view', 'rates.manage',
+                ...$readOnly, 'warehouses.manage', 'warehouses.all', 'customers.manage', 'receipts.create',
+                'rates.view', 'rates.manage', 'deliveries.create', 'carriers.manage', 'vouchers.view', 'vouchers.collect',
             ],
             'Bodeguero' => [...$readOnly, 'receipts.create'],
-            'Auditor' => [...$readOnly, 'warehouses.all', 'rates.view'],
+            'Despachador' => [...$readOnly, 'deliveries.create', 'vouchers.view'],
+            'Cajero' => [...$readOnly, 'vouchers.view', 'vouchers.collect'],
+            'Auditor' => [...$readOnly, 'warehouses.all', 'rates.view', 'vouchers.view'],
         ];
     }
 }

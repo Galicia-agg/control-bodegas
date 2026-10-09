@@ -4,7 +4,10 @@ import {
     Building2,
     LayoutDashboard,
     PackageCheck,
+    PackageOpen,
     Receipt,
+    Truck,
+    Wallet,
     ShieldCheck,
     UsersRound,
     Users,
@@ -24,11 +27,14 @@ import {
 } from '@/components/ui/sidebar';
 import { usePermissions } from '@/composables/usePermissions';
 import { dashboard } from '@/routes';
+import { index as carriersIndex } from '@/routes/carriers';
 import { index as customersIndex } from '@/routes/customers';
+import { index as deliveriesIndex } from '@/routes/deliveries';
 import { index as ratesIndex } from '@/routes/rates';
 import { index as receiptsIndex } from '@/routes/receipts';
 import { index as rolesIndex } from '@/routes/roles';
 import { index as usersIndex } from '@/routes/users';
+import { index as vouchersIndex } from '@/routes/vouchers';
 import { index as warehousesIndex } from '@/routes/warehouses';
 import type { NavGroup } from '@/types';
 
@@ -48,6 +54,18 @@ const navigation: NavGroup[] = [
                 icon: PackageCheck,
                 can: 'receipts.view',
             },
+            {
+                title: 'Entregas',
+                href: deliveriesIndex(),
+                icon: PackageOpen,
+                can: 'deliveries.view',
+            },
+            {
+                title: 'Cobros',
+                href: vouchersIndex(),
+                icon: Wallet,
+                can: 'vouchers.view',
+            },
         ],
     },
     {
@@ -58,6 +76,12 @@ const navigation: NavGroup[] = [
                 href: customersIndex(),
                 icon: UsersRound,
                 can: 'customers.view',
+            },
+            {
+                title: 'Transportistas',
+                href: carriersIndex(),
+                icon: Truck,
+                can: 'carriers.view',
             },
             {
                 title: 'Tarifas',

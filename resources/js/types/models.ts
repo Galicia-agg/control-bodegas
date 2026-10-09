@@ -78,6 +78,7 @@ export type Receipt = {
     units_count?: number;
     stored_units_count?: number;
     units?: StorageUnit[];
+    deliveries?: Delivery[];
 };
 
 export type ManagedUser = {
@@ -120,6 +121,7 @@ export type AccrualLine = {
     unit_id: number;
     code: string;
     type: StorageUnitType;
+    stored: boolean;
     days: number;
     free_days: number;
     billable_days: number;
@@ -130,5 +132,96 @@ export type AccrualLine = {
 export type Accrual = {
     lines: AccrualLine[];
     total: number;
+    pending_total: number;
     missing_rates: number;
+};
+
+export type DeliveryType = 'retiro' | 'domicilio';
+export type DeliveryStatus =
+    | 'programada'
+    | 'en_ruta'
+    | 'entregada'
+    | 'cancelada';
+export type VoucherStatus = 'pendiente' | 'pagado' | 'anulado';
+
+export type Carrier = {
+    id: number;
+    name: string;
+    kind: 'propio' | 'externo';
+    driver_name: string | null;
+    vehicle_plate: string | null;
+    phone: string | null;
+    is_active: boolean;
+    deliveries_count?: number;
+};
+
+export type VoucherSummary = {
+    id: number;
+    folio: string;
+    total: string;
+    status: VoucherStatus;
+};
+
+export type VoucherLine = {
+    id: number;
+    concept: RateService;
+    description: string;
+    quantity: string;
+    unit_price: string;
+    amount: string;
+};
+
+export type Voucher = {
+    id: number;
+    folio: string;
+    total: string;
+    status: VoucherStatus;
+    issued_at: string;
+    paid_at: string | null;
+    payment_method: string | null;
+    payment_reference: string | null;
+    customer: Option & { tax_id?: string | null; address?: string | null };
+    receipt: {
+        id: number;
+        folio: string;
+        transport_mode: TransportMode;
+        transport_document: string | null;
+        duca: string | null;
+    };
+    delivery: {
+        id: number;
+        folio: string;
+        type: DeliveryType;
+        recipient_name: string;
+    } | null;
+    user: Option;
+    collector: Option | null;
+    lines?: VoucherLine[];
+};
+
+export type Delivery = {
+    id: number;
+    folio: string;
+    type: DeliveryType;
+    status: DeliveryStatus;
+    recipient_name: string;
+    recipient_document: string | null;
+    destination_address: string | null;
+    destination_phone: string | null;
+    released_at: string;
+    scheduled_at: string | null;
+    completed_at: string | null;
+    proof_note: string | null;
+    notes: string | null;
+    receipt: {
+        id: number;
+        folio: string;
+        customer: Option & { tax_id?: string | null };
+        warehouse?: Option;
+    };
+    carrier: Carrier | null;
+    user?: Option;
+    units?: StorageUnit[];
+    units_count?: number;
+    voucher: VoucherSummary | null;
 };

@@ -1,11 +1,14 @@
 <?php
 
+use App\Http\Controllers\CarrierController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DeliveryController;
 use App\Http\Controllers\RateController;
 use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\VoucherController;
 use App\Http\Controllers\WarehouseController;
 use Illuminate\Support\Facades\Route;
 
@@ -22,6 +25,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     });
 
     Route::get('clientes', [CustomerController::class, 'index'])->middleware('can:customers.view')->name('customers.index');
+    Route::get('clientes/{customer}', [CustomerController::class, 'show'])->middleware('can:customers.view')->name('customers.show');
     Route::middleware('can:customers.manage')->group(function () {
         Route::post('clientes', [CustomerController::class, 'store'])->name('customers.store');
         Route::put('clientes/{customer}', [CustomerController::class, 'update'])->name('customers.update');
@@ -32,6 +36,24 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('ingresos/nuevo', [ReceiptController::class, 'create'])->middleware('can:receipts.create')->name('receipts.create');
     Route::post('ingresos', [ReceiptController::class, 'store'])->middleware('can:receipts.create')->name('receipts.store');
     Route::get('ingresos/{receipt}', [ReceiptController::class, 'show'])->middleware('can:receipts.view')->name('receipts.show');
+
+    Route::get('entregas', [DeliveryController::class, 'index'])->middleware('can:deliveries.view')->name('deliveries.index');
+    Route::get('ingresos/{receipt}/entregas/nueva', [DeliveryController::class, 'create'])->middleware('can:deliveries.create')->name('deliveries.create');
+    Route::post('ingresos/{receipt}/entregas', [DeliveryController::class, 'store'])->middleware('can:deliveries.create')->name('deliveries.store');
+    Route::get('entregas/{delivery}', [DeliveryController::class, 'show'])->middleware('can:deliveries.view')->name('deliveries.show');
+    Route::post('entregas/{delivery}/estado', [DeliveryController::class, 'advance'])->middleware('can:deliveries.create')->name('deliveries.advance');
+    Route::post('entregas/{delivery}/cancelar', [DeliveryController::class, 'cancel'])->middleware('can:deliveries.create')->name('deliveries.cancel');
+
+    Route::get('cobros', [VoucherController::class, 'index'])->middleware('can:vouchers.view')->name('vouchers.index');
+    Route::get('cobros/{voucher}', [VoucherController::class, 'show'])->middleware('can:vouchers.view')->name('vouchers.show');
+    Route::post('cobros/{voucher}/pago', [VoucherController::class, 'pay'])->middleware('can:vouchers.collect')->name('vouchers.pay');
+
+    Route::get('transportistas', [CarrierController::class, 'index'])->middleware('can:carriers.view')->name('carriers.index');
+    Route::middleware('can:carriers.manage')->group(function () {
+        Route::post('transportistas', [CarrierController::class, 'store'])->name('carriers.store');
+        Route::put('transportistas/{carrier}', [CarrierController::class, 'update'])->name('carriers.update');
+        Route::delete('transportistas/{carrier}', [CarrierController::class, 'destroy'])->name('carriers.destroy');
+    });
 
     Route::get('tarifas', [RateController::class, 'index'])->middleware('can:rates.view')->name('rates.index');
     Route::middleware('can:rates.manage')->group(function () {

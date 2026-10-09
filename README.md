@@ -2,7 +2,7 @@
 
 Sistema web para una bodega que almacena mercadería **importada** (por mar, aire o tierra) de terceros y la entrega a sus clientes, de forma parcial o total, cobrando el almacenaje y las entregas. Incluye autenticación y autorización por roles.
 
-> **Estado:** en transición desde un inventario genérico. Ya están clientes, ingresos y unidades de almacenaje. Pendientes: tarifas y cobros, entregas parciales/totales con comprobante y entrega a domicilio.
+> **Estado:** el flujo completo está implementado: ingreso → almacenaje con tarifas → entregas parciales o totales (retiro o domicilio) → comprobante de cobro → pago.
 
 ## Stack
 
@@ -44,11 +44,20 @@ Contraseña de todos: `password`
 
 ## Módulos
 
-- **Panel**: ingresos activos, unidades almacenadas, clientes activos y actividad de 14 días.
-- **Ingresos**: recepción de contenedores, furgones o carga aérea para un cliente, con tipo de transporte, BL/guía aérea/carta de porte, DUCA, transportista y origen. Cada ingreso tiene folio automático (`ING-000001`…) y sus unidades de almacenaje.
-- **Unidades de almacenaje**: contenedor, palet, caja o bulto, en jerarquía (un palet dentro de un contenedor, una caja sobre un palet), con código propio, piezas, peso, volumen y ubicación en bodega.
-- **Catálogos**: clientes (dueños de la mercadería) y bodegas.
-- **Administración**: usuarios (rol + bodegas asignadas + activo/inactivo) y roles con matriz de permisos editable.
+- **Panel**: ingresos activos, unidades almacenadas, pendiente de cobrar, entregas a domicilio activas y actividad de 14 días.
+- **Ingresos**: recepción de contenedores, furgones o carga aérea para un cliente, con tipo de transporte, BL/guía aérea/carta de porte, DUCA, transportista y origen. Folio `ING-000001`…
+- **Unidades de almacenaje**: contenedor, palet, caja o bulto en jerarquía, con código propio, piezas, peso, volumen y ubicación.
+- **Tarifas**: almacenaje (por unidad y día, con días libres), manejo (por unidad entregada) y entrega a domicilio (por entrega). Una tarifa por cliente o por tipo de unidad tiene prioridad sobre la general.
+- **Entregas**: retiro en bodega o a domicilio, parcial o total (`ENT-000001`…). Domicilio: transportista, destino, y seguimiento programada → en ruta → entregada, con constancia. Se puede cancelar mientras no esté cobrada.
+- **Cobros**: cada entrega genera un comprobante (`COB-000001`…) con el desglose de almacenaje, manejo y domicilio; se puede pagar al entregar o después. Las unidades se cobran una sola vez, en la entrega que las saca.
+- **Clientes**: catálogo y estado de cuenta (facturado, cobrado, pendiente y almacenaje acumulado sin cobrar).
+- **Catálogos y administración**: bodegas, transportistas, usuarios y roles con matriz de permisos editable.
+
+### Reglas de cobro
+
+- El almacenaje cuenta días calendario desde la recepción (el primer día cuenta) hasta que la unidad sale; los días libres no se cobran.
+- Solo se cobran las unidades sin contenido: un contenedor con palets se cobra por sus palets; un contenedor sellado, como contenedor.
+- Entregar una unidad que contiene otras libera todo su contenido. Cuando sale lo último, el ingreso queda finalizado.
 
 ## Autorización
 

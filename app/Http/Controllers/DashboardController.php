@@ -2,10 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\DeliveryStatus;
+use App\Enums\DeliveryType;
 use App\Enums\StorageUnitStatus;
+use App\Enums\VoucherStatus;
 use App\Models\Customer;
+use App\Models\Delivery;
 use App\Models\Receipt;
 use App\Models\StorageUnit;
+use App\Models\Voucher;
 use App\Models\Warehouse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -45,6 +50,11 @@ class DashboardController extends Controller
                 'storedUnits' => $storedUnits()->count(),
                 'customers' => Customer::where('is_active', true)->count(),
                 'receiptsToday' => Receipt::visibleTo($user)->whereDate('received_at', today())->count(),
+                'pendingCollection' => $user->can('vouchers.view') ? (float) Voucher::visibleTo($user)->where('status', VoucherStatus::Pending)->sum('total') : null,
+                'activeDeliveries' => Delivery::visibleTo($user)
+                    ->where('type', DeliveryType::Home)
+                    ->whereIn('status', [DeliveryStatus::Scheduled, DeliveryStatus::OnRoute])
+                    ->count(),
             ],
             'activity' => $activity,
             'recentReceipts' => Receipt::visibleTo($user)

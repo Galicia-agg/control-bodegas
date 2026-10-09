@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\ReceiptStatus;
+use App\Enums\StorageUnitStatus;
 use App\Enums\StorageUnitType;
 use App\Enums\TransportMode;
 use App\Http\Requests\ReceiptRequest;
@@ -88,6 +89,7 @@ class ReceiptController extends Controller
             'warehouse:id,code,name',
             'user:id,name',
             'units' => fn ($q) => $q->orderBy('id'),
+            'deliveries' => fn ($q) => $q->latest('released_at')->with('voucher:id,delivery_id,folio,total,status'),
         ]);
 
         return Inertia::render('receipts/Show', [
@@ -95,6 +97,7 @@ class ReceiptController extends Controller
             'modeLabel' => $receipt->transport_mode->label(),
             'documentLabel' => $receipt->transport_mode->documentLabel(),
             'statusLabel' => $receipt->status->label(),
+            'canDeliver' => $request->user()->can('deliveries.create') && $receipt->units->contains(fn ($u) => $u->status === StorageUnitStatus::Stored),
             'accrual' => $request->user()->can('rates.view') ? $billing->storageAccrual($receipt) : null,
         ]);
     }

@@ -2,7 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ReceiptStatus;
+use App\Enums\VoucherStatus;
 use App\Models\Customer;
+use App\Models\Receipt;
+use App\Models\Voucher;
+use App\Services\BillingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -26,6 +31,52 @@ class CustomerController extends Controller
                 ->paginate(15)
                 ->withQueryString(),
             'filters' => ['search' => $search],
+        ]);
+    }
+
+    /**
+     * Account statement: what has been billed, collected and what is still
+     * accruing on the customer's stored merchandise.
+     */
+    public function show(Request $request, Customer $customer, BillingService $billing): Response
+    {
+        $user = $request->user();
+        $canSeeMoney = $user->can('vouchers.view');
+
+        $receipts = Receipt::query()
+            ->visibleTo($user)
+            ->where('customer_id', $customer->id)
+            ->with(['warehouse:id,name', 'units'])
+            ->withCount('units')
+            ->latest('received_at')
+            ->get();
+
+        $vouchers = Voucher::query()->visibleTo($user)->where('customer_id', $customer->id)
+            ->where('status', '!=', VoucherStatus::Voided)
+            ->get()
+            ->groupBy('receipt_id');
+
+        $rows = $receipts->map(function (Receipt $r) use ($vouchers, $billing, $canSeeMoney) {
+            $own = $vouchers->get($r->id, collect());
+
+            return [
+                'id' => $r->id,
+                'folio' => $r->folio,
+                'status' => $r->status->value,
+                'received_at' => $r->received_at,
+                'warehouse' => $r->warehouse->name,
+                'units_count' => $r->units_count,
+                'billed' => $canSeeMoney ? (float) $own->sum('total') : null,
+                'paid' => $canSeeMoney ? (float) $own->where('status', VoucherStatus::Paid)->sum('total') : null,
+                'pending' => $canSeeMoney ? (float) $own->where('status', VoucherStatus::Pending)->sum('total') : null,
+                'accruing' => $canSeeMoney && $r->status !== ReceiptStatus::Finished ? $billing->storageAccrual($r)['pending_total'] : ($canSeeMoney ? 0.0 : null),
+            ];
+        });
+
+        return Inertia::render('customers/Show', [
+            'customer' => $customer,
+            'receipts' => $rows,
+            'canSeeMoney' => $canSeeMoney,
         ]);
     }
 

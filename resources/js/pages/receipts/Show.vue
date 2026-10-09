@@ -1,12 +1,18 @@
 <script setup lang="ts">
 import { Head, Link, setLayoutProps } from '@inertiajs/vue3';
-import { ArrowLeft, Printer } from '@lucide/vue';
+import { ArrowLeft, PackageOpen, Printer } from '@lucide/vue';
 import { computed } from 'vue';
 import ReceiptStatusBadge from '@/components/ReceiptStatusBadge.vue';
+import StatusPill from '@/components/StatusPill.vue';
 import TransportModeBadge from '@/components/TransportModeBadge.vue';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, formatDateTime, formatNumber } from '@/lib/format';
+import {
+    show as deliveryShow,
+    create as deliveryCreate,
+} from '@/routes/deliveries';
 import { index, show } from '@/routes/receipts';
+import { show as voucherShow } from '@/routes/vouchers';
 import type { Accrual, Receipt, StorageUnit } from '@/types';
 
 const props = defineProps<{
@@ -15,6 +21,7 @@ const props = defineProps<{
     documentLabel: string;
     statusLabel: string;
     accrual: Accrual | null;
+    canDeliver: boolean;
 }>();
 
 setLayoutProps({
@@ -77,9 +84,16 @@ const totals = computed(() => {
             <Button variant="ghost" size="sm" as-child>
                 <Link :href="index()"><ArrowLeft /> Volver</Link>
             </Button>
-            <Button variant="outline" size="sm" @click="print"
-                ><Printer /> Imprimir</Button
-            >
+            <div class="flex gap-2">
+                <Button v-if="canDeliver" size="sm" as-child>
+                    <Link :href="deliveryCreate(receipt.id)"
+                        ><PackageOpen /> Registrar entrega</Link
+                    >
+                </Button>
+                <Button variant="outline" size="sm" @click="print"
+                    ><Printer /> Imprimir</Button
+                >
+            </div>
         </div>
 
         <article class="overflow-hidden rounded-xl border bg-card shadow-xs">
@@ -275,6 +289,49 @@ const totals = computed(() => {
         </article>
 
         <section
+            v-if="receipt.deliveries?.length"
+            class="overflow-hidden rounded-xl border bg-card shadow-xs"
+        >
+            <div class="border-b p-6">
+                <h2 class="font-semibold">Entregas y cobros</h2>
+            </div>
+            <ul class="divide-y">
+                <li
+                    v-for="d in receipt.deliveries"
+                    :key="d.id"
+                    class="flex flex-wrap items-center gap-x-4 gap-y-1 px-6 py-3 text-sm"
+                >
+                    <Link
+                        :href="deliveryShow(d.id)"
+                        class="font-mono font-semibold hover:underline"
+                        >{{ d.folio }}</Link
+                    >
+                    <span>{{
+                        d.type === 'retiro' ? 'Retiro' : 'Domicilio'
+                    }}</span>
+                    <StatusPill :status="d.status" />
+                    <span class="text-muted-foreground">{{
+                        formatDateTime(d.released_at)
+                    }}</span>
+                    <span
+                        v-if="d.voucher"
+                        class="ml-auto flex items-center gap-2"
+                    >
+                        <Link
+                            :href="voucherShow(d.voucher.id)"
+                            class="font-mono hover:underline"
+                            >{{ d.voucher.folio }}</Link
+                        >
+                        <span class="tabular">{{
+                            formatCurrency(d.voucher.total)
+                        }}</span>
+                        <StatusPill :status="d.voucher.status" />
+                    </span>
+                </li>
+            </ul>
+        </section>
+
+        <section
             v-if="accrual"
             class="overflow-hidden rounded-xl border bg-card shadow-xs"
         >
@@ -282,11 +339,13 @@ const totals = computed(() => {
                 class="flex flex-wrap items-start justify-between gap-3 border-b p-6"
             >
                 <div>
-                    <h2 class="font-semibold">Almacenaje acumulado a hoy</h2>
+                    <h2 class="font-semibold">Almacenaje</h2>
                     <p class="text-sm text-muted-foreground">
                         Se cobra por unidad y día, desde la fecha de recepción
-                        (el primer día cuenta). Los contenedores o palets con
-                        contenido se cobran a través de lo que contienen.
+                        (el primer día cuenta) hasta que la unidad sale. Las
+                        unidades que ya salieron se cobraron en el comprobante
+                        de su entrega. Los contenedores o palets con contenido
+                        se cobran a través de lo que contienen.
                     </p>
                 </div>
                 <p class="text-right">

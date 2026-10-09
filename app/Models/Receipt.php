@@ -68,6 +68,22 @@ class Receipt extends Model
     }
 
     /**
+     * @return HasMany<Delivery, $this>
+     */
+    public function deliveries(): HasMany
+    {
+        return $this->hasMany(Delivery::class);
+    }
+
+    /**
+     * @return HasMany<Voucher, $this>
+     */
+    public function vouchers(): HasMany
+    {
+        return $this->hasMany(Voucher::class);
+    }
+
+    /**
      * Limit the query to receipts stored in a warehouse the user can access.
      *
      * @param  Builder<self>  $query

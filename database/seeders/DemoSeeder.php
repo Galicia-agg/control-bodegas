@@ -2,10 +2,12 @@
 
 namespace Database\Seeders;
 
+use App\Models\Carrier;
 use App\Models\Customer;
 use App\Models\Rate;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Services\DeliveryService;
 use App\Services\ReceptionService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
@@ -15,7 +17,7 @@ class DemoSeeder extends Seeder
     /**
      * Seed demo data: warehouses, users per role, customers and receipts.
      */
-    public function run(ReceptionService $reception): void
+    public function run(ReceptionService $reception, DeliveryService $deliveries): void
     {
         $supervisor = User::factory()->create(['name' => 'Sofía Supervisor', 'email' => 'supervisor@bodegas.test'])->assignRole('Supervisor');
         $operator = User::factory()->create(['name' => 'Carlos Bodeguero', 'email' => 'bodeguero@bodegas.test'])->assignRole('Bodeguero');
@@ -40,7 +42,10 @@ class DemoSeeder extends Seeder
         Rate::create(['service' => 'manejo', 'amount' => 10]);
         Rate::create(['service' => 'domicilio', 'amount' => 150]);
 
-        $reception->register([
+        $moto = Carrier::create(['name' => 'Camión 01', 'kind' => 'propio', 'driver_name' => 'Pedro Gómez', 'vehicle_plate' => 'C-123ABC', 'phone' => '5555-1010']);
+        Carrier::create(['name' => 'Fletes Rápidos, S.A.', 'kind' => 'externo', 'driver_name' => 'Luis Castillo', 'vehicle_plate' => 'C-456DEF', 'phone' => '5555-2020']);
+
+        $first = $reception->register([
             'customer_id' => $customers[0]->id,
             'warehouse_id' => $central->id,
             'transport_mode' => 'maritimo',
@@ -57,7 +62,7 @@ class DemoSeeder extends Seeder
             ],
         ], $supervisor);
 
-        $reception->register([
+        $second = $reception->register([
             'customer_id' => $customers[1]->id,
             'warehouse_id' => $norte->id,
             'transport_mode' => 'aereo',
@@ -86,6 +91,26 @@ class DemoSeeder extends Seeder
                 ['type' => 'bulto', 'description' => 'Bultos de accesorios', 'pieces' => 24, 'weight_kg' => 310, 'location' => 'C-12'],
                 ['type' => 'bulto', 'description' => 'Bultos de accesorios', 'pieces' => 24, 'weight_kg' => 305, 'location' => 'C-12'],
             ],
+        ], $operator);
+
+        // Partial pickup paid at the counter, and a home delivery still on its way.
+        $deliveries->register($first, [
+            'unit_ids' => [$first->units()->where('code', 'like', '%PAL01')->value('id')],
+            'type' => 'retiro',
+            'recipient_name' => 'Luis Pérez',
+            'recipient_document' => '2345 67890 0101',
+            'paid' => true,
+            'payment_method' => 'efectivo',
+        ], $supervisor);
+
+        $deliveries->register($second, [
+            'unit_ids' => [$second->units()->where('code', 'like', '%CAJ01')->value('id')],
+            'type' => 'domicilio',
+            'recipient_name' => 'Boutique Aurora',
+            'destination_address' => '6a Avenida 12-34, Zona 10, Ciudad de Guatemala',
+            'destination_phone' => '2366-7788',
+            'carrier_id' => $moto->id,
+            'scheduled_at' => Carbon::now()->addDay()->toDateTimeString(),
         ], $operator);
     }
 }

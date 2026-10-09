@@ -6,7 +6,9 @@ import {
     CalendarClock,
     PackageCheck,
     Package,
+    Truck,
     UsersRound,
+    Wallet,
 } from '@lucide/vue';
 import { computed } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
@@ -14,7 +16,7 @@ import ReceiptStatusBadge from '@/components/ReceiptStatusBadge.vue';
 import StatCard from '@/components/StatCard.vue';
 import TransportModeBadge from '@/components/TransportModeBadge.vue';
 import { usePermissions } from '@/composables/usePermissions';
-import { formatDateTime, formatNumber } from '@/lib/format';
+import { formatCurrency, formatDateTime, formatNumber } from '@/lib/format';
 import { dashboard } from '@/routes';
 import { index as receiptsIndex, show as receiptShow } from '@/routes/receipts';
 import type { Receipt } from '@/types';
@@ -31,6 +33,8 @@ const props = defineProps<{
         storedUnits: number;
         customers: number;
         receiptsToday: number;
+        pendingCollection: number | null;
+        activeDeliveries: number;
     };
     activity: { date: string; receipts: number }[];
     recentReceipts: Receipt[];
@@ -107,6 +111,21 @@ const dayLabel = (date: string) =>
                 :value="formatNumber(stats.receiptsToday)"
                 :icon="CalendarClock"
                 tone="warning"
+            />
+            <StatCard
+                v-if="stats.pendingCollection !== null"
+                label="Pendiente de cobrar"
+                :value="formatCurrency(stats.pendingCollection)"
+                :icon="Wallet"
+                tone="destructive"
+                hint="Comprobantes emitidos sin pago"
+            />
+            <StatCard
+                label="Entregas a domicilio activas"
+                :value="formatNumber(stats.activeDeliveries)"
+                :icon="Truck"
+                tone="info"
+                hint="Programadas o en ruta"
             />
         </section>
 

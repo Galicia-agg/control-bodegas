@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { Mail, Pencil, Phone, Plus, Trash2, UsersRound } from '@lucide/vue';
 import { ref } from 'vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
@@ -33,7 +33,7 @@ import {
 } from '@/components/ui/table';
 import { useFilters } from '@/composables/useFilters';
 import { usePermissions } from '@/composables/usePermissions';
-import { destroy, index, store, update } from '@/routes/customers';
+import { destroy, index, show, store, update } from '@/routes/customers';
 import type { Paginated, Customer } from '@/types';
 
 defineOptions({
@@ -145,7 +145,11 @@ const confirmDelete = () => {
                                 >
                                     <UsersRound class="size-4" />
                                 </div>
-                                <span class="font-medium">{{ s.name }}</span>
+                                <Link
+                                    :href="show(s.id)"
+                                    class="font-medium hover:underline"
+                                    >{{ s.name }}</Link
+                                >
                             </div>
                         </TableCell>
                         <TableCell class="font-mono text-sm">{{
