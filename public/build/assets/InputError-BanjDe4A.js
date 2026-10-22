@@ -1,0 +1,1 @@
+import{Jt as e,M as t,Z as n,et as r,kn as i,lt as a,mr as o}from"./wayfinder-D3OJecnM.js";var s={class:`text-sm text-destructive`,role:`alert`},c=a({__name:`InputError`,props:{message:{}},setup(a){return(c,l)=>i((e(),r(`div`,null,[n(`p`,s,o(a.message),1)],512)),[[t,a.message]])}});export{c as t};
